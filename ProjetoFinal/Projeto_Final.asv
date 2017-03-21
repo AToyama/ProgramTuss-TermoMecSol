@@ -157,11 +157,12 @@ fclose(File);
 %%
 Num_Elem=length(incidencia(:,1));%pegando todas as linhas e 1 coluna de incidencia isso define o numero de elementos(elementos=barras)
 
-
-incidencia2=zeros(Num_Elem,5);%definindo o tamanho da matriz de incidencia global, inicializando com tudo zero
-K= zeros(length(coords(:,1)),length(coords(:,1)));%Inicializando a Matriz de Rigidez(4x4)
-Kg=zeros(length(coords(:,1))*2,length(coords(:,1))*2);%Inicializando a Matriz de Rigidez Global(8x8)
-GDL = zeros(Num_Elem,4);%Inicializando a Matriz de GDL(6x4)
+%matriz de incidencia global
+incidencia2=zeros(Num_Elem,5);%definindo o tamanho da matriz, inicializando com tudo zero
+K= zeros(4,4);%Inicializando a Matriz de Rigidez(4x4)
+%Matriz com os graus de liberdade
+Kg=zeros(8,8);
+GDL = zeros(6,4);
 
 %%
 %Reescrevendo a matriz de incidencia  com o COMPRIMENTO, COS e SEN
