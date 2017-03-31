@@ -164,7 +164,7 @@ Num_GDL = length(coords(:,1))*2;
 
 
 Incidencia2 = zeros(Num_Elem,5);%definindo o tamanho da matriz de Incidencia global, inicializando com tudo zero
-K = zeros(length(coords(:,1)),length(coords(:,1)));%Inicializando a Matriz de Rigidez(4x4)
+K = zeros(4,4);%Inicializando a Matriz de Rigidez(4x4) (length(coords(:,1)),length(coords(:,1)))
 Kg = zeros(length(coords(:,1))*2,length(coords(:,1))*2);%Inicializando a Matriz de Rigidez Global(8x8)
 GDL = zeros(Num_Elem,4);%Inicializando a Matriz de GDL(6x4)
 
@@ -237,8 +237,8 @@ end
 % u para os graus de liberdade livre(u=deslocamento)
 % Kg(5:8,5:8)Pega as linhas de 5 a 8 da coluna 5 a 8 de Kg e f(5:8,1) pega
 % as linhas 5 a 8 da coluna 1 de f
-ug = zeros(8,1);%u2= inv(Kg(1:4,1:4))*f(1:4,1);
-ug(5:8,1)=U;%ug contem agora os nos com valor 0 que são restritos e os nós livres que estavam em u 
+ug = zeros(Num_GDL,1);%u2= inv(Kg(1:4,1:4))*f(1:4,1);
+ug(Loads:Num_GDL,1)=U;%ug contem agora os nos com valor 0 que são restritos e os nós livres que estavam em u 
 
 
 %% Aplicando as Equações
@@ -247,47 +247,3 @@ for i =1:Num_Elem
     Deform(i)=(1/Incidencia2(i,3))*[-(Incidencia2(i,4)) -(Incidencia2(i,5)) Incidencia2(i,4) Incidencia2(i,5)]*ug(GDL(i,:));
     Tensao(i)=(material(i,1)/Incidencia2(i,3))*[-(Incidencia2(i,4)) -(Incidencia2(i,5)) Incidencia2(i,4) Incidencia2(i,5)]*ug(GDL(i,:));
 end
-
-%% Post-processing
-disp(br0);
-fprintf(1,'POST-PROCESSING...\n');
-disp(br0);
-
-%% Output file
-OutFileName = sprintf('%s.out', InpFileName);
-OutFile     = fopen(OutFileName, 'w');
-
-fprintf(OutFile, '*DISPLACEMENTS\n');
-for i = 1 : TotalNumNodes
-    
-displa = [U(HDBCNodes(i,[1 2]))']; %ver isso aqui
-fprintf(OutFile, '%5d %6.4e %6.4e \n', i, displa);
-
-end
-
-fprintf(OutFile, '\n*ELEMENT_STRAINS\n');
-for i = 1 : TotalNumElements
-    fprintf(OutFile, '%5d %e\n', i, Deform(i));
-end
-
-fprintf(OutFile, '\n*ELEMENT_STRESSES\n');
-for i = 1 : TotalNumElements
-    fprintf(OutFile, '%5d %e\n', i, Tensao(i));
-end
-
-fprintf(OutFile, '\n*REACTION_FORCES\n');
-for i = 1 : TotalNumRestrDOFs
-    
-    ElemEqs = NodalDOFNumbers(HDBCNodes(i, 1),HDBCNodes(i, 2)+1);
-    
-    if HDBCNodes(i, 2) == 1
-        fprintf(OutFile, '%5d FX = %e\n', HDBCNodes(i, 1), FRg(ElemEqs));
-    end
-    
-    if HDBCNodes(i, 2) == 2
-        fprintf(OutFile, '%5d FY = %e\n', HDBCNodes(i, 1), FRg(ElemEqs));
-    end
-       
-end
-
-fclose(OutFile);
