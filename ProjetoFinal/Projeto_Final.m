@@ -169,38 +169,39 @@ Kg = zeros(length(coords(:,1))*2,length(coords(:,1))*2);%Inicializando a Matriz 
 GDL = zeros(Num_Elem,4);%Inicializando a Matriz de GDL(6x4)
 
 
-for i=1:Num_Elem%for rodando de 1 até o numero de elementos da matriz de Incidencia (todas as linhas da primeira coluna)
-    %pegando a cordenada de cada nó
+for i=1:Num_Elem%a cada elemento de barra i...
     
-    x1 = coords(Incidencia(i,1),1);%x1=pega a linha i da primeira coluna da matriz de Incidencia e pego a posição (1,1) da matriz coords E obtem a cordenada x do primeiro nó do elemento i
-    y1 = coords(Incidencia(i,1),2);%y1=pega a linha i da primeira coluna da matriz de Incidencia E obtem a cordenada y do primeiro nó do elemento i
-    x2 = coords(Incidencia(i,2),1);%x2=pega a linha i da segunda coluna da matriz de Incidencia
-    y2 = coords(Incidencia(i,2),2);%y2=pega a linha i da segunda coluna da matriz de Incidencia
+    x1 = coords(Incidencia(i,1),1);%pega a coordenada x do no 1 da barra i
+    y1 = coords(Incidencia(i,1),2);%pega a coordenada y do no 1 da barra i
+    x2 = coords(Incidencia(i,2),1);%pega a coordenada x do no 2 da barra i
+    y2 = coords(Incidencia(i,2),2);%pega a coordenada y do no 2 da barra i
     
-    Comprimento = sqrt(((x1-x2)^2) + ((y2-y1)^2));%definição do Comprimento para cada elemento
+    Comprimento = sqrt(((x1-x2)^2) + ((y2-y1)^2));%definição do comprimento para cada elemento
     
-    GDL(i,1) = Incidencia(i,1)*2-1;
+    GDL(i,1) = Incidencia(i,1)*2-1; %criação da matriz GDL:
     GDL(i,2) = Incidencia(i,1)*2;
     GDL(i,3) = Incidencia(i,2)*2-1;
     GDL(i,4) = Incidencia(i,2)*2;
     
     
-    cos = (x2-x1) /Comprimento ;%definição de cos
-    sen = (y2-y1) /Comprimento ;%definição de sen
+    cos = (x2-x1) /Comprimento ;%definição de cos da barra i
+    sen = (y2-y1) /Comprimento ;%definição de sen da barra i
     
-    Incidencia2(i,:) = [Incidencia(i,1:2),Comprimento, cos, sen];%Matriz nova de Incidencia envolvendo a matriz inteira antiga de Incidencia +Comprimento, sen e cos
+    %Matriz envolvendo a matriz inteira antiga de Incidencia +Comprimento, sen e cos
+    Incidencia2(i,:) = [Incidencia(i,1:2),Comprimento, cos, sen];
     
-    
+    %cria a amtriz K da barra I
     K(:,:,i) = ((material(i,1)*Propriedades(i)/Comprimento))*[(cos^2) (cos*sen) (-(cos^2)) (-(cos*sen)); 
                                                             (cos*sen) (sen^2) (-(sen*cos)) (-(sen^2)); 
                                                             (-(cos^2)) (-(sen*cos)) (cos^2) (cos*sen);
                                                             (-(sen*cos)) (-(sen^2)) (cos*sen) (sen^2)];%((material(i)*Propriedades(i)/Comprimento))= E*A/l*[]
-
+    
+    %Superpoe matriz k da barra i na Kg
     Kg(GDL(i,:),GDL(i,:))=Kg(GDL(i,:),GDL(i,:))+(K(:,:,i));
                                         
 end
 
-Total_Nodes = zeros(1,Num_GDL);
+Total_Nodes = zeros(1,Num_GDL); %cria uma lista com todos os graus de liberdade da treliça
 for i = 1:Num_GDL;
     Total_Nodes(1,i) = i;
 end
@@ -218,13 +219,13 @@ Kg_CF = Kg; % Kg com condicao de contorno p/ calculo das forças
 Kg_CR = Kg; % Kg com condicao de contorno p/ calculo das reações
 
 
-Stuck_Nodes = zeros(1,Num_GDL);
+Stuck_Nodes = zeros(1,Num_GDL); %matriz que representa graus de liberdade travados
 index = length(HDBCNodes(:,1));
 while index >= 1; 
     if HDBCNodes(index,2) == 1
         Kg_CF(HDBCNodes(index,1)*2-1,:) = []; %apaga cada linha impar que representa um gdl travado
         Kg_CF(:,HDBCNodes(index,1)*2-1) = []; %apaga cada coluna impar que representa um gdl travado
-        Stuck_Nodes(1,HDBCNodes(index,1)*2-1) = HDBCNodes(index,1)*2-1;
+        Stuck_Nodes(1,HDBCNodes(index,1)*2-1) = HDBCNodes(index,1)*2-1;%preenche com gdl travados
         Kg_CR(:,HDBCNodes(index,1)*2-1) = []; %apaga cada coluna impar que representa um gdl travado
         Pg(HDBCNodes(index,1)*2-1,:) = [];
         index = index - 1;
@@ -232,38 +233,39 @@ while index >= 1;
     else
         Kg_CF(HDBCNodes(index,1)*2,:) = []; %apaga cada linha par que representa um gdl travado
         Kg_CF(:,HDBCNodes(index,1)*2) = []; %apaga cada coluna par que representa um gdl travado
-        Stuck_Nodes(1,HDBCNodes(index,1)*2) = HDBCNodes(index,1)*2;
+        Stuck_Nodes(1,HDBCNodes(index,1)*2) = HDBCNodes(index,1)*2;%preenche com gdl travados
         Kg_CR(:,HDBCNodes(index,1)*2) = []; %apaga cada coluna par que representa um gdl travado
         Pg(HDBCNodes(index,1)*2,:) = [];
         index = index - 1;
     end    
 end
 
-Free_Nodes = setdiff(Total_Nodes, Stuck_Nodes);
+Free_Nodes = setdiff(Total_Nodes, Stuck_Nodes); %Matriz que representa graus de liberdade livres
 
 for i = 1:length(Free_Nodes); 
-    Kg_CR(Free_Nodes(length(Free_Nodes)-i+1),:) = []; %apaga cada linha que representa um gdl LIVRE   
+    Kg_CR(Free_Nodes(length(Free_Nodes)-i+1),:) = []; %apaga cada linha que representa um gdl LIVRE  (cond. de contorno) 
 end
 
 
 
-%Montagem do vetor de carga global ( -1000 pois a força é para baixo)
-%(posição 8 pois incide no GDL 8)
-%% Gauss Sidel
-[ U, Erro ] = GaussSidel(100, 10E-7, Kg_CF, Pg);
-%U = inv(Kg)*Pg; % u é meu solver u=(Kg^-1)*f (Aplicadas as condições de contorno.)
-% u para os graus de liberdade livre(u=deslocamento)
-% Kg(5:8,5:8)Pega as linhas de 5 a 8 da coluna 5 a 8 de Kg e f(5:8,1) pega
-% as linhas 5 a 8 da coluna 1 de f
-Ug = zeros(Num_GDL,1);%u2= inv(Kg(1:4,1:4))*f(1:4,1);
 
-Reaction = Kg_CR*U;
+%Gauss Sidel para calculo dos deslocamentos nodais
+[ U, Erro ] = GaussSidel(100, 10E-7, Kg_CF, Pg);
+
+
+
+
+
+U = inv(Kg_CF)*Pg;
+
+Ug = zeros(Num_GDL,1);%cria matriz COMPLETA de deslocamentos nodais (incluji tambem aqueles com valor 0.
+
+Reaction = Kg_CR*U; %lista com as forças de reações
 
 for i = 1:length(Free_Nodes)
     Ug(Free_Nodes(1,i),1) = U(i,1);
 end 
 
-%% Aplicando as Equações
 %Deformação e Tensão
 for i =1:Num_Elem
     Deform(i)=(1/Incidencia2(i,3))*[-(Incidencia2(i,4)) -(Incidencia2(i,5)) Incidencia2(i,4) Incidencia2(i,5)]*Ug(GDL(i,:));
