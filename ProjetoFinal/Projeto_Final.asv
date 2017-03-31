@@ -277,7 +277,7 @@ OutFileName = sprintf('%s.out', InpFileName);
 OutFile     = fopen(OutFileName, 'w');
 
 fprintf(OutFile, '*DISPLACEMENTS\n');
-for i = 1 : NumLoadedNodes
+for i = 1 : length(HDBCNodes)
     
 displa = Ug(HDBCNodes(i,[1 2]))'; %ver isso aqui
 fprintf(OutFile, '%5d %6.4e %6.4e \n', i, displa);
