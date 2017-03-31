@@ -256,6 +256,9 @@ end
 % Kg(5:8,5:8)Pega as linhas de 5 a 8 da coluna 5 a 8 de Kg e f(5:8,1) pega
 % as linhas 5 a 8 da coluna 1 de f
 Ug = zeros(Num_GDL,1);%u2= inv(Kg(1:4,1:4))*f(1:4,1);
+
+Reaction = Kg_CR*U;
+
 for i = 1:length(Free_Nodes)
     Ug(Free_Nodes(1,i),1) = U(i,1);
 end 
@@ -277,7 +280,7 @@ OutFileName = sprintf('%s.out', InpFileName);
 OutFile     = fopen(OutFileName, 'w');
 
 fprintf(OutFile, '*DISPLACEMENTS\n');
-for i = 1 : length(HDBCNodes)
+for i = 1 : NumLoadedNodes
     
 displa = Ug(HDBCNodes(i,[1 2]))'; %ver isso aqui
 fprintf(OutFile, '%5d %6.4e %6.4e \n', i, displa);

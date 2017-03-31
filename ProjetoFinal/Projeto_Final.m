@@ -256,6 +256,9 @@ end
 % Kg(5:8,5:8)Pega as linhas de 5 a 8 da coluna 5 a 8 de Kg e f(5:8,1) pega
 % as linhas 5 a 8 da coluna 1 de f
 Ug = zeros(Num_GDL,1);%u2= inv(Kg(1:4,1:4))*f(1:4,1);
+
+Reaction = Kg_CR*U;
+
 for i = 1:length(Free_Nodes)
     Ug(Free_Nodes(1,i),1) = U(i,1);
 end 
@@ -277,10 +280,10 @@ OutFileName = sprintf('%s.out', InpFileName);
 OutFile     = fopen(OutFileName, 'w');
 
 fprintf(OutFile, '*DISPLACEMENTS\n');
-for i = 1 : NumLoadedNodes
-    
-displa = Ug(HDBCNodes(i,[1 2]))'; %ver isso aqui
-fprintf(OutFile, '%5d %6.4e %6.4e \n', i, displa);
+for i = 1 : Num_GDL/2;
+   
+fprintf(OutFile, '%5d %6.4e ', i, Ug(2*i-1,1));
+fprintf(OutFile, '%6.4e \n ', Ug(2*i,1));
 
 end
 
@@ -295,16 +298,15 @@ for i = 1 : TotalNumElements
 end
 
 fprintf(OutFile, '\n*REACTION_FORCES\n');
-for i = 1 : TotalNumRestrDOFs
+for i = 1 : size(HDBCNodes,1);
     
-    ElemEqs = NodalDOFNumbers(HDBCNodes(i, 1),HDBCNodes(i, 2)+1);
     
     if HDBCNodes(i, 2) == 1
-        fprintf(OutFile, '%5d FX = %e\n', HDBCNodes(i, 1), FRg(ElemEqs));
+        fprintf(OutFile, '%5d FX = %e\n', HDBCNodes(i, 1), Reaction(i));
     end
     
     if HDBCNodes(i, 2) == 2
-        fprintf(OutFile, '%5d FY = %e\n', HDBCNodes(i, 1), FRg(ElemEqs));
+        fprintf(OutFile, '%5d FY = %e\n', HDBCNodes(i, 1), Reaction(i));
     end
        
 end
