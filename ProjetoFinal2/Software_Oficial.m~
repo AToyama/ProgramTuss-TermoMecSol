@@ -179,7 +179,6 @@ for i=1:Num_Elem%for rodando de 1 até o numero de elementos da matriz de Inciden
     
     Comprimento = sqrt(((x1-x2)^2) + ((y2-y1)^2));%definição do Comprimento para cada elemento
     
-    %% Construindo a matriz GDL
     GDL(i,1) = Incidencia(i,1)*2-1;
     GDL(i,2) = Incidencia(i,1)*2;
     GDL(i,3) = Incidencia(i,2)*2-1;
@@ -221,10 +220,9 @@ end
 Kg_CF = Kg; % Kg com condicao de contorno p/ calculo das forças
 Kg_CR = Kg; % Kg com condicao de contorno p/ calculo das reações
 
-
+%% 
 Stuck_Nodes = zeros(1,Num_GDL);
 index = length(HDBCNodes(:,1));
-%% Aplica condições de contorno para Kg
 while index >= 1;
     if HDBCNodes(index,2) == 1
         Kg_CF(HDBCNodes(index,1)*2-1,:) = []; %apaga cada linha impar que representa um gdl travado
@@ -244,32 +242,34 @@ while index >= 1;
     end
 end
 
-%% Declarando os Graus de liberdade livres
 Free_Nodes = setdiff(Total_Nodes, Stuck_Nodes);
 
 for i = 1:length(Free_Nodes);
     Kg_CR(Free_Nodes(length(Free_Nodes)-i+1),:) = []; %apaga cada linha que representa um gdl LIVRE
 end
 
+
+
+%Montagem do vetor de carga global ( -1000 pois a força é para baixo)
+%(posição 8 pois incide no GDL 8)
 %% Gauss Sidel
 [ U, Erro ] = GaussSidel(100, 10E-7, Kg_CF, Pg);
 %U = inv(Kg)*Pg; % u é meu solver u=(Kg^-1)*f (Aplicadas as condições de contorno.)
 % u para os graus de liberdade livre(u=deslocamento)
-
-%% Deslocamento nodal
-Ug = zeros(Num_GDL,1);%Adiciona zeros para os Us livres
+% Kg(5:8,5:8)Pega as linhas de 5 a 8 da coluna 5 a 8 de Kg e f(5:8,1) pega
+% as linhas 5 a 8 da coluna 1 de f
+Ug = zeros(Num_GDL,1);%u2= inv(Kg(1:4,1:4))*f(1:4,1);
 for i = 1:length(Free_Nodes)
     Ug(Free_Nodes(1,i),1) = U(i,1);
 end
-%% Cálculo das forças de Reação
 Reaction_Forces= Kg_CR * U;
-%% Aplicando as Equações %Deformação e Tensão
+%% Aplicando as Equações
+%Deformação e Tensão
 for i =1:Num_Elem
     Deform(i)=(1/Incidencia2(i,3))*[-(Incidencia2(i,4)) -(Incidencia2(i,5)) Incidencia2(i,4) Incidencia2(i,5)]*Ug(GDL(i,:));
     Tensao(i)=(material(i,1)/Incidencia2(i,3))*[-(Incidencia2(i,4)) -(Incidencia2(i,5)) Incidencia2(i,4) Incidencia2(i,5)]*Ug(GDL(i,:));
 end
 
-%% Print file OUT
 %% Post-processing
 TotalNumRestrDOFs =size(HDBCNodes,1);
 disp(br0);
@@ -281,11 +281,11 @@ OutFileName = sprintf('%s.out', InpFileName);
 OutFile     = fopen(OutFileName, 'w');
 
 fprintf(OutFile, '*DISPLACEMENTS\n');
-for i = 1 : Num_GDL/2;
-   
-fprintf(OutFile, '%5d %6.4e ', i, Ug(2*i-1,1));
-fprintf(OutFile, '%6.4e \n ', Ug(2*i,1));
-
+for i = 1 : NumLoadedNodes
+    
+    displa = [U(GDL(i,[2 3]))']; %ver isso aqui
+    fprintf(OutFile, '%5d %6.4e %6.4e \n', i, displa);
+    
 end
 
 fprintf(OutFile, '\n*ELEMENT_STRAINS\n');
@@ -299,17 +299,18 @@ for i = 1 : TotalNumElements
 end
 
 fprintf(OutFile, '\n*REACTION_FORCES\n');
-for i = 1 : size(HDBCNodes,1);
+for i = 1 : TotalNumRestrDOFs 
     
+    ElemEqs = GDL(HDBCNodes(i, 1),HDBCNodes(i, 2)+1);
     
     if HDBCNodes(i, 2) == 1
-        fprintf(OutFile, '%5d FX = %e\n', HDBCNodes(i, 1), Reaction_Forces(i));
+        fprintf(OutFile, '%5d FX = %e\n', HDBCNodes(i, 1), Pg(ElemEqs));
     end
     
     if HDBCNodes(i, 2) == 2
-        fprintf(OutFile, '%5d FY = %e\n', HDBCNodes(i, 1), Reaction_Forces(i));
+        fprintf(OutFile, '%5d FY = %e\n', HDBCNodes(i, 1), Pg(ElemEqs));
     end
-       
+    
 end
 
 fclose(OutFile);
