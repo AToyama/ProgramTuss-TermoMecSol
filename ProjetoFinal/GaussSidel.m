@@ -1,5 +1,5 @@
-%% JACOBI
-function [ u, Erro ] = Jacobi(iterations, Tolerancia, Kg, f)
+%% Gauss Sidel
+function [ u, Erro ] = GaussSidel(iterations, Tolerancia, Kg, f)
 
 [ord, j]= size(Kg);% tamanho de i e j que são iguais
 disloc = zeros(ord, j);%tamanho de disloc
